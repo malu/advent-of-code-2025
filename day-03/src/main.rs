@@ -16,19 +16,21 @@ fn main() {
     println!("Part2: {part2}");
 }
 
-fn max_joltage<const N: usize>(bank: &[u8]) -> u64 {
-    let mut best = [0; N];
-    for (i, item) in bank.iter().map(|b| b - b'0').enumerate() {
-        let remaining = bank.len() - i;
-        let offset = N.saturating_sub(remaining);
-        for j in offset..N {
-            if item > best[j] {
-                best[j] = item;
-                best[j + 1..].fill(0);
-                break;
-            }
-        }
+fn max_joltage<const N: usize>(mut bank: &[u8]) -> u64 {
+    let mut result = 0;
+
+    for j in 0..N {
+        let (i, b) = bank[..bank.len() - (N - j - 1)]
+            .iter()
+            .enumerate()
+            // `max_by_key` returns the last maximum entry. We are seeking the first and need to
+            // reverse the iteration order.
+            .rev()
+            .max_by_key(|(_, b)| **b)
+            .unwrap();
+        bank = &bank[i + 1..];
+        result = 10 * result + u64::from(*b - b'0');
     }
 
-    best.into_iter().fold(0, |t, i| 10 * t + i as u64)
+    result
 }
