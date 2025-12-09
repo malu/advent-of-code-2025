@@ -43,7 +43,7 @@ fn next2(cur: u64) -> (u64, u32) {
 
 fn next(mut n: u64, segments: u32) -> u64 {
     let digits = n.ilog10() + 1;
-    if digits % segments != 0 {
+    if !digits.is_multiple_of(segments) {
         return next(10u64.pow(digits), segments);
     }
 
