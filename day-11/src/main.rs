@@ -11,8 +11,10 @@ fn main() {
 
     let mut names = HashMap::new();
 
-
-    for n in nodes.iter().flat_map(|n| n.conns.iter().copied().chain(std::iter::once(n.name))) {
+    for n in nodes
+        .iter()
+        .flat_map(|n| n.conns.iter().copied().chain(std::iter::once(n.name)))
+    {
         if names.contains_key(n) {
             continue;
         }
@@ -43,7 +45,10 @@ fn main() {
     let svrdac = paths[names["svr"]][names["dac"]];
     let dacfft = paths[names["dac"]][names["fft"]];
     let fftout = paths[names["fft"]][names["out"]];
-    println!("Part2: {}", svrdac * dacfft * fftout + svrfft * fftdac * dacout);
+    println!(
+        "Part2: {}",
+        svrdac * dacfft * fftout + svrfft * fftdac * dacout
+    );
 }
 
 fn matmul(a: &[[u64; N]], b: &[[u64; N]]) -> Vec<[u64; N]> {
