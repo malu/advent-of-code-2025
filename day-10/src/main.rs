@@ -144,19 +144,18 @@ impl Line {
         println!();
 
         let mut skip_rows = 0;
-        for column in 0..self.buttons.len() + 1 {
+        for column in 0..self.buttons.len() {
             let mut with_leading_nonzero = matrix
                 .iter()
-                .enumerate()
-                .filter(|(_, row)| row[column] != 0)
-                .map(|(i, _)| i)
+                .map(|row| row[column])
+                .filter(|v| *v != 0)
                 .peekable();
             if with_leading_nonzero.peek().is_none() {
                 continue;
             }
             let mut lcm_ = 1;
-            for row in with_leading_nonzero {
-                lcm_ = lcm(lcm_, matrix[row][column]);
+            for v in with_leading_nonzero {
+                lcm_ = lcm(lcm_, v);
             }
 
             // find all below row with a nonzero coefficient in this column
@@ -238,16 +237,17 @@ impl Line {
         println!("{ranges:?}");
 
         if free_columns.is_empty() {
-            shrink_ranges(&matrix, &mut ranges);
+            if !shrink_ranges(&matrix, &mut ranges) {
+                println!("no solution");
+                panic!();
+            }
+
             let count = ranges.iter().map(|(lo, _)| *lo).sum::<i32>() as u64;
             println!("fully determined; solution {count}");
             return count;
         }
 
-        let default_total = vec![0; self.joltages.len()];
         let default_ranges = ranges.clone();
-
-        let mut total = vec![0; self.joltages.len()];
 
         let mut best = u64::MAX;
 
@@ -284,9 +284,7 @@ impl Line {
                 ranges[*var] = (*assignment, *assignment);
             }
 
-            shrink_ranges(&matrix, &mut ranges);
-
-            if ranges.iter().any(|(_, hi)| *hi < 0) {
+            if !shrink_ranges(&matrix, &mut ranges) {
                 if !next_assignment(&mut assignments, &value_space) {
                     break;
                 }
@@ -301,18 +299,7 @@ impl Line {
                 continue;
             }
 
-            default_total.clone_into(&mut total);
-            let value = ranges.iter().map(|(lo, _)| *lo);
-
-            for (button_idx, count) in value.enumerate() {
-                for i in 0..self.joltages.len() {
-                    total[i] += buttons[button_idx][i] * count as u16;
-                }
-            }
-
-            if total == self.joltages {
-                best = best.min(cost);
-            }
+            best = best.min(cost);
 
             if !next_assignment(&mut assignments, &value_space) {
                 break;
@@ -329,9 +316,9 @@ impl Line {
     }
 }
 
-fn shrink_ranges(matrix: &[Vec<i32>], ranges: &mut [(i32, i32)]) {
+fn shrink_ranges(matrix: &[Vec<i32>], ranges: &mut [(i32, i32)]) -> bool {
     let last = ranges.len();
-    'rows: for (r, row) in matrix.iter().enumerate() {
+    for (r, row) in matrix.iter().enumerate() {
         let mut other = 0;
         let mut undetermined = None;
         for (col, v) in row.iter().take(ranges.len()).enumerate().skip(r) {
@@ -342,24 +329,24 @@ fn shrink_ranges(matrix: &[Vec<i32>], ranges: &mut [(i32, i32)]) {
                 other += *v * ranges[col].0;
                 continue;
             }
-            if undetermined.is_none() {
-                undetermined = Some((col, *v));
-            } else {
-                // second undetermined in this row => can't determine this one
-                continue 'rows;
-            }
+
+            // there can be only one undetermined column per row because we fully simplified the
+            // matrix
+            undetermined = Some((col, *v));
         }
 
         if let Some((col, v)) = undetermined {
             let target = row[last] - other;
             let determined = target / v;
-            if determined < ranges[col].0 || ranges[col].1 < determined {
-                ranges[col] = (-1, -1);
-                return;
+            if determined < ranges[col].0 || ranges[col].1 < determined || determined * v != target
+            {
+                return false;
             }
             ranges[col] = (target / v, target / v);
         }
     }
+
+    true
 }
 
 fn gcd(x: i32, y: i32) -> i32 {
