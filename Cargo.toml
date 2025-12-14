@@ -14,3 +14,6 @@ members = [
   "day-11",
   "day-12",
 ]
+[profile.release]
+debug = true
+panic = "abort"
