@@ -284,6 +284,13 @@ impl Line {
                 ranges[*var] = (*assignment, *assignment);
             }
 
+            let cost = ranges.iter().map(|(lo, _)| lo).sum::<i32>() as u64;
+            if cost >= best {
+                if !next_assignment(&mut assignments, &value_space) {
+                    break;
+                }
+                continue;
+            }
             if !shrink_ranges(&matrix, &mut ranges) {
                 if !next_assignment(&mut assignments, &value_space) {
                     break;
