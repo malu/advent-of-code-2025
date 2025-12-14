@@ -236,17 +236,6 @@ impl Line {
         println!("free: {free_columns:?}");
         println!("{ranges:?}");
 
-        if free_columns.is_empty() {
-            if !shrink_ranges(&matrix, &mut ranges) {
-                println!("no solution");
-                panic!();
-            }
-
-            let count = ranges.iter().map(|(lo, _)| *lo).sum::<i32>() as u64;
-            println!("fully determined; solution {count}");
-            return count;
-        }
-
         let default_ranges = ranges.clone();
 
         let mut best = u64::MAX;
@@ -342,7 +331,7 @@ fn shrink_ranges(matrix: &[Vec<i32>], ranges: &mut [(i32, i32)]) -> bool {
             {
                 return false;
             }
-            ranges[col] = (target / v, target / v);
+            ranges[col] = (determined, determined);
         }
     }
 
